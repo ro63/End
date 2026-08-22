@@ -1,0 +1,19 @@
+{
+  "name": "NIPCO Daily Equipment Control System",
+  "short_name": "NIPCO DECS",
+  "description": "سامانه کنترل و بازدید روزانه تجهیزات NIPCO",
+  "dir": "rtl",
+  "lang": "fa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10161f",
+  "theme_color": "#10161f",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4 56 18v28L32 60 8 46V18Z' fill='%23E8590C'/%3E%3Cpath d='M22 42V22l10 12V22h10v20H32L22 30v12Z' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
