@@ -393,7 +393,9 @@ export function makeSeed(): DB {
     archives: [],
     settings: {
       theme: "light", accent: "#e8590c", sessionTimeoutMin: 120, gatewayPollSec: 30, gatewayEnabled: true,
-      autoBackup: "daily", logoDataUrl: null, loginLogoDataUrl: null, operationalYear: 1405,
+      autoBackup: "daily", logoDataUrl: null, loginLogoDataUrl: null, reportLogoDataUrl: null,
+      brandNameFa: "نیپکو | قطعه‌سازی خودرو", brandNameEn: "NIPCO", tagline: "سامانه کنترل و بازدید روزانه تجهیزات",
+      loginBg: "image", cardRadius: 14, density: "comfortable", operationalYear: 1405,
       notifRules: { nokEmail: true, nokSms: false, overdueEmail: true, failureSms: true },
       dashLayout: { completion: true, trend: true, shift: true, ohTop: true, activity: true, notifs: true },
     },

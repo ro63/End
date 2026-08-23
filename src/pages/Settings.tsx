@@ -26,7 +26,7 @@ export default function Settings() {
           <p className="text-[12.5px] font-semibold mt-1.5" style={{ color: "var(--muted)" }}>همه‌چیز Configurable — بدون نیاز به تغییر Source Code</p>
         </div>
         <Seg value={tab} onChange={setTab} options={[
-          { v: "general", label: "عمومی", icon: "cog" }, { v: "brand", label: "برندینگ", icon: "camera" },
+          { v: "general", label: "عمومی", icon: "cog" }, { v: "brand", label: "برندینگ و UI", icon: "camera" },
           { v: "shifts", label: "شیفت‌ها", icon: "clock" }, { v: "year", label: "سال و آرشیو", icon: "archive" },
           { v: "backup", label: "پشتیبان‌گیری", icon: "database" }, { v: "theme", label: "تم", icon: "sun" },
         ]} />
@@ -95,57 +95,154 @@ function GeneralTab() {
   );
 }
 
-/* ================= برندینگ و لوگو ================= */
+/* ================= برندینگ، لوگو و شخصی‌سازی کامل UI =================
+   • سه جایگاه لوگو: اصلی (سربرگ/گزارش/چاپ) + صفحه ورود + گزارشات
+   • نام شرکت (فارسی/انگلیسی) و شعار — در ورود، سربرگ و PDF
+   • پس‌زمینه صفحه ورود: تصویر صنعتی / رنگ یکدست / الگوی فنی
+   • ظاهر: شعاع کارت‌ها + تراکم رابط — همه بدون Hard-Code            */
 const OK_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+type LogoKey = "logoDataUrl" | "loginLogoDataUrl" | "reportLogoDataUrl";
+
 function BrandTab() {
   const { updateSettings, db, toast, log } = useStore();
-  const mainRef = useRef<HTMLInputElement>(null);
-  const loginRef = useRef<HTMLInputElement>(null);
+  const s = db.settings;
+  const refs = { logoDataUrl: useRef<HTMLInputElement>(null), loginLogoDataUrl: useRef<HTMLInputElement>(null), reportLogoDataUrl: useRef<HTMLInputElement>(null) };
 
   /* Validation فایل: نوع، حجم و نام امن — از فایل مخرب جلوگیری می‌شود */
-  function handleFile(file: File | undefined, which: "logoDataUrl" | "loginLogoDataUrl") {
+  function handleFile(file: File | undefined, which: LogoKey) {
     if (!file) return;
     if (!OK_TYPES.includes(file.type)) { toast("فرمت مجاز نیست — فقط PNG / JPG / SVG / WEBP", "err"); return; }
     if (file.size > 400 * 1024) { toast("حجم لوگو باید کمتر از ۴۰۰KB باشد", "err"); return; }
     const r = new FileReader();
     r.onload = () => {
-      updateSettings({ [which]: r.result as string } as never, which === "logoDataUrl" ? "Logo Change" : "Login Logo Change");
-      log(which === "logoDataUrl" ? "تغییر لوگوی سامانه" : "تغییر لوگوی صفحه ورود", "Branding");
+      updateSettings({ [which]: r.result as string } as never, "Logo Change");
+      log(`تغییر لوگو (${which === "logoDataUrl" ? "اصلی" : which === "loginLogoDataUrl" ? "ورود" : "گزارشات"})`, "Branding");
       toast("لوگو با موفقیت به‌روزرسانی شد ✓", "ok");
     };
     r.readAsDataURL(file);
   }
 
-  const Slot = ({ which, title, desc }: { which: "logoDataUrl" | "loginLogoDataUrl"; title: string; desc: string }) => (
-    <div className="card p-5">
-      <h3 className="font-bold text-[14px] mb-1">{title}</h3>
-      <p className="text-[11.5px] font-semibold mb-4" style={{ color: "var(--muted)" }}>{desc}</p>
-      <div className="rounded-xl border-2 border-dashed p-6 flex items-center justify-center mb-4 min-h-[110px]" style={{ borderColor: "var(--line2)", background: "var(--panel2)" }}>
-        {db.settings[which] ? <img src={db.settings[which]!} alt="لوگو" style={{ maxHeight: 70, maxWidth: 220, objectFit: "contain" }} /> : <Logo size={44} />}
-      </div>
-      <div className="flex gap-2">
-        <button className="btn btn-acc btn-sm flex-1" onClick={() => (which === "logoDataUrl" ? mainRef : loginRef).current?.click()}>
-          <Icon name="upload" size={14} />{db.settings[which] ? "تغییر لوگو" : "Upload لوگو"}
-        </button>
-        {db.settings[which] && (
-          <button className="btn btn-ghost btn-sm" onClick={() => { updateSettings({ [which]: null } as never, "Logo Delete"); log("حذف لوگو", "Branding", "warning"); toast("لوگو حذف شد — لوگوی پیش‌فرض سیستم نمایش داده می‌شود", "info"); }}>
-            <Icon name="trash" size={14} />حذف
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  const slots: { key: LogoKey; title: string; desc: string; icon: string }[] = [
+    { key: "logoDataUrl", title: "لوگوی اصلی", desc: "نمایش در Header، Sidebar و داشبورد", icon: "dashboard" },
+    { key: "loginLogoDataUrl", title: "لوگوی صفحه ورود", desc: "نمایش اختصاصی در صفحه Login", icon: "users" },
+    { key: "reportLogoDataUrl", title: "لوگوی گزارشات", desc: "در خروجی PDF، چاپ و سربرگ گزارش‌ها", icon: "printer" },
+  ];
+
+  const bgs: { k: "image" | "solid" | "pattern"; t: string; d: string }[] = [
+    { k: "image", t: "تصویر صنعتی", d: "عکس خط تولید با نور صنعتی" },
+    { k: "solid", t: "رنگ یکدست", d: "پس‌زمینه تیره ساده و سبک" },
+    { k: "pattern", t: "الگوی فنی", d: "شبکه مهندسی + شیب صنعتی" },
+  ];
 
   return (
-    <div className="fade-up">
-      <div className="grid md:grid-cols-2 gap-4">
-        <Slot which="logoDataUrl" title="لوگوی اصلی" desc="نمایش در Header، Sidebar، داشبورد، گزارشات، PDF و چاپ" />
-        <Slot which="loginLogoDataUrl" title="لوگوی صفحه ورود" desc="نمایش اختصاصی در صفحه Login" />
+    <div className="fade-up space-y-4">
+      {/* ---------- لوگوها ---------- */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {slots.map((slot) => (
+          <div key={slot.key} className="card p-5">
+            <h3 className="font-bold text-[14px] mb-1 flex items-center gap-2"><Icon name={slot.icon} size={15} style={{ color: "var(--acc)" }} />{slot.title}</h3>
+            <p className="text-[11px] font-semibold mb-4" style={{ color: "var(--muted)" }}>{slot.desc}</p>
+            <div className="rounded-xl border-2 border-dashed p-5 flex items-center justify-center mb-4 min-h-[104px]" style={{ borderColor: "var(--line2)", background: "var(--panel2)" }}>
+              {s[slot.key] ? <img src={s[slot.key]!} alt="لوگو" style={{ maxHeight: 62, maxWidth: 200, objectFit: "contain" }} /> : <Logo size={40} />}
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-acc btn-sm flex-1" onClick={() => refs[slot.key].current?.click()}>
+                <Icon name="upload" size={14} />{s[slot.key] ? "تغییر" : "Upload"}
+              </button>
+              {s[slot.key] && (
+                <button className="btn btn-ghost btn-sm" onClick={() => { updateSettings({ [slot.key]: null } as never, "Logo Delete"); log("حذف لوگو", "Branding", "warning"); toast("لوگو حذف شد — لوگوی پیش‌فرض نمایش داده می‌شود", "info"); }}>
+                  <Icon name="trash" size={14} />
+                </button>
+              )}
+            </div>
+            <input ref={refs[slot.key]} type="file" hidden accept={OK_TYPES.join(",")} onChange={(e) => { handleFile(e.target.files?.[0], slot.key); e.target.value = ""; }} />
+          </div>
+        ))}
       </div>
-      <input ref={mainRef} type="file" hidden accept={OK_TYPES.join(",")} onChange={(e) => handleFile(e.target.files?.[0], "logoDataUrl")} />
-      <input ref={loginRef} type="file" hidden accept={OK_TYPES.join(",")} onChange={(e) => handleFile(e.target.files?.[0], "loginLogoDataUrl")} />
-      <p className="text-[11px] font-semibold mt-3 flex items-center gap-1.5" style={{ color: "var(--muted)" }}>
-        <Icon name="shield" size={13} />File Type + Size Validation فعال است — لوگو در Source Code هاردکد نیست و در دیتابیس ذخیره می‌شود.
+
+      {/* ---------- نام و شعار ---------- */}
+      <div className="card p-5">
+        <h3 className="font-bold text-[14px] mb-3 flex items-center gap-2"><Icon name="pen" size={15} style={{ color: "var(--acc)" }} />نام سازمان و شعار</h3>
+        <div className="grid sm:grid-cols-3 gap-3.5">
+          <div>
+            <label className="lbl">نام شرکت (فارسی) — صفحه ورود و سربرگ چاپ</label>
+            <input className="inp" value={s.brandNameFa} onChange={(e) => updateSettings({ brandNameFa: e.target.value }, "Brand Name FA")} />
+          </div>
+          <div>
+            <label className="lbl">نام شرکت (انگلیسی) — لوگوی متنی</label>
+            <input className="inp ltr !text-left" dir="ltr" value={s.brandNameEn} onChange={(e) => updateSettings({ brandNameEn: e.target.value }, "Brand Name EN")} />
+          </div>
+          <div>
+            <label className="lbl">شعار زیر لوگو (صفحه ورود)</label>
+            <input className="inp" value={s.tagline} onChange={(e) => updateSettings({ tagline: e.target.value }, "Tagline")} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* ---------- پس‌زمینه صفحه ورود ---------- */}
+        <div className="card p-5">
+          <h3 className="font-bold text-[14px] mb-3 flex items-center gap-2"><Icon name="camera" size={15} style={{ color: "var(--acc)" }} />پس‌زمینه صفحه ورود</h3>
+          <div className="space-y-2.5">
+            {bgs.map((b) => (
+              <button key={b.k} onClick={() => { updateSettings({ loginBg: b.k }, `Login Background → ${b.t}`); log("تغییر پس‌زمینه ورود", "Branding"); }}
+                className={cx("w-full rounded-xl border-2 p-2.5 flex items-center gap-3 text-right transition-all", s.loginBg === b.k ? "" : "opacity-65 hover:opacity-100")}
+                style={{ borderColor: s.loginBg === b.k ? "var(--acc)" : "var(--line)" }}>
+                {/* پیش‌نمایش زنده هر پس‌زمینه */}
+                <span className="w-20 h-12 rounded-lg flex-shrink-0 overflow-hidden relative" style={{ background: b.k === "solid" ? "#0d141d" : "linear-gradient(140deg,#0d141d,#1b2530)" }}>
+                  {b.k === "image" && <span className="absolute inset-0 opacity-70" style={{ backgroundImage: "radial-gradient(circle at 70% 20%, rgba(232,89,12,.8), transparent 45%), radial-gradient(circle at 20% 80%, rgba(33,150,243,.35), transparent 40%)" }} />}
+                  {b.k === "pattern" && <span className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px)", backgroundSize: "9px 9px" }} />}
+                  <span className="absolute bottom-1 right-1.5 w-6 h-1 rounded bg-[var(--acc)]" />
+                </span>
+                <span className="flex-1">
+                  <b className="text-[13px] block">{b.t}</b>
+                  <span className="text-[11px] font-semibold" style={{ color: "var(--muted)" }}>{b.d}</span>
+                </span>
+                {s.loginBg === b.k && <Icon name="check" size={17} style={{ color: "var(--acc)" }} />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ---------- ظاهر رابط کاربری ---------- */}
+        <div className="card p-5">
+          <h3 className="font-bold text-[14px] mb-3 flex items-center gap-2"><Icon name="sun" size={15} style={{ color: "var(--acc)" }} />ظاهر رابط کاربری (UI)</h3>
+          <div className="mb-4">
+            <label className="lbl flex items-center justify-between">
+              <span>شعاع گوشه کارت‌ها و دکمه‌ها</span>
+              <span className="badge b-acc ltr">{s.cardRadius}px</span>
+            </label>
+            <input type="range" min={0} max={22} step={1} value={s.cardRadius}
+              onChange={(e) => updateSettings({ cardRadius: +e.target.value }, "Card Radius")}
+              className="w-full" style={{ accentColor: "var(--acc)" }} />
+            <div className="flex justify-between text-[9.5px] font-bold" style={{ color: "var(--muted)" }}><span>مربع (صنعتی)</span><span>گرد (مدرن)</span></div>
+          </div>
+          <div className="mb-4">
+            <label className="lbl">تراکم رابط — مناسب تبلت یا مانیتور</label>
+            <div className="flex gap-2">
+              {([["comfortable", "راحت", "فضای بیشتر برای لمس"], ["compact", "فشرده", "اطلاعات بیشتر در صفحه"]] as const).map(([k, t, d]) => (
+                <button key={k} onClick={() => { updateSettings({ density: k }, `Density → ${t}`); log("تغییر تراکم رابط", "Settings"); }}
+                  className={cx("flex-1 rounded-xl border-2 p-3 text-right transition-all", s.density === k ? "" : "opacity-65 hover:opacity-100")}
+                  style={{ borderColor: s.density === k ? "var(--acc)" : "var(--line)" }}>
+                  <b className="text-[13px] flex items-center gap-1.5">{t}{s.density === k && <Icon name="check" size={13} style={{ color: "var(--acc)" }} />}</b>
+                  <span className="text-[10.5px] font-semibold" style={{ color: "var(--muted)" }}>{d}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-3.5 border" style={{ borderColor: "var(--line)", background: "var(--panel2)" }}>
+            <p className="lbl !mb-2">پیش‌نمایش زنده</p>
+            <div className="card p-3 mb-2 !m-0"><p className="font-bold text-[12.5px]">کارت نمونه</p><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>تجهیز • پرس هیدرولیک ۱۵۰۰ تن</p></div>
+            <div className="flex gap-2">
+              <span className="btn btn-acc btn-sm pointer-events-none">دکمه اصلی</span>
+              <span className="badge b-ok">OK</span><span className="badge b-nok">NOK</span><span className="badge b-acc">خارج محدوده</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: "var(--muted)" }}>
+        <Icon name="shield" size={13} />File Type + Size Validation فعال است — لوگوها و تنظیمات ظاهری در Source Code هاردکد نیستند و در دیتابیس ذخیره می‌شوند.
       </p>
     </div>
   );

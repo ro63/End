@@ -109,7 +109,9 @@ function Shell() {
   );
 
   return (
-    <div className="min-h-screen flex">
+    /* ریشه پوسته — شعاع کارت‌ها و تراکم رابط از Settings خوانده می‌شود */
+    <div className={cx("min-h-screen flex", db.settings.density === "compact" && "compact")}
+      style={{ ["--radius" as never]: `${db.settings.cardRadius}px` }}>
       {/* ================= Sidebar دسکتاپ ================= */}
       <aside className="w-[236px] flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen no-print" style={{ background: "var(--side)", borderInlineEnd: "1px solid var(--side-line)" }}>
         <div className="px-5 py-5 border-b" style={{ borderColor: "var(--side-line)" }}>
@@ -122,7 +124,7 @@ function Shell() {
         {SideNav}
         <div className="p-3 border-t" style={{ borderColor: "var(--side-line)" }}>
           <div className="rounded-xl p-3" style={{ background: "var(--side2)" }}>
-            <p className="text-[11px] font-bold text-white flex items-center gap-1.5"><Icon name="shield" size={13} className="text-[var(--acc)]" />NIPCO DECS v1.0</p>
+            <p className="text-[11px] font-bold text-white flex items-center gap-1.5"><Icon name="shield" size={13} className="text-[var(--acc)]" />{db.settings.brandNameEn} DECS v1.0</p>
             <p className="text-[9.5px] font-semibold mt-1" style={{ color: "var(--side-dim)" }}>طراح سیستم: محمد روشندل • سال {faNum(db.settings.operationalYear)}</p>
           </div>
         </div>

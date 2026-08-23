@@ -182,6 +182,26 @@ select.inp { appearance: none; background-image: linear-gradient(45deg, transpar
 @keyframes scanline { 0% { top: 6%; } 50% { top: 90%; } 100% { top: 6%; } }
 .scanline { position: absolute; left: 8%; right: 8%; height: 2px; background: var(--acc); box-shadow: 0 0 14px 2px color-mix(in srgb, var(--acc) 70%, transparent); animation: scanline 2.6s ease-in-out infinite; }
 
+/* ============================================================
+   شخصی‌سازی UI — شعاع کارت‌ها و تراکم رابط
+   این مقادیر از Settings → برندینگ و UI تنظیم می‌شوند (Hard-Code نیست)
+   ============================================================ */
+:root { --radius: 14px; }
+.card, .modal-card { border-radius: var(--radius); }
+.btn { border-radius: calc(var(--radius) - 4px); }
+.inp { border-radius: calc(var(--radius) - 5px); }
+.badge { border-radius: calc(var(--radius) - 7px); }
+.nav-item { border-radius: calc(var(--radius) - 5px); }
+.touch-btn { border-radius: calc(var(--radius) - 4px); }
+
+/* حالت فشرده — اطلاعات بیشتر در صفحه */
+.compact .card { padding: 0.7rem; }
+.compact .tbl td, .compact .tbl th { padding: 0.4rem 0.6rem; }
+.compact .inp { padding: 0.45rem 0.65rem; font-size: 12.5px; }
+.compact .btn { padding: 0.45rem 0.8rem; }
+.compact .nav-item { padding: 0.5rem 0.65rem; }
+.compact .badge { padding: 0.1rem 0.45rem; }
+
 @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .fade-up { animation: fadeUp 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

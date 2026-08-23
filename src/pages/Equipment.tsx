@@ -10,7 +10,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../lib/store";
 import type { Equipment as Eq, EquipmentGroup, LocationNode, EquipmentStatus } from "../lib/types";
-import { Icon, Modal, PseudoQR, Seg, Empty, Switch } from "../components/ui";
+import { Icon, Modal, PseudoQR, Seg, Empty, Switch, JalaliDatePicker } from "../components/ui";
 import { cx, faNum, uid } from "../lib/utils";
 
 type Tab = "eq" | "groups" | "locs";
@@ -197,6 +197,9 @@ function EqForm({ initial, onClose, onSave }: { initial: Eq | null; onClose: () 
           <select className="inp" value={f.status} onChange={(e) => set("status", e.target.value)}>
             <option value="active">فعال</option><option value="idle">آماده‌به‌کار</option><option value="maintenance">تعمیرات</option><option value="inactive">غیرفعال</option>
           </select></div>
+        {/* تاریخ راه‌اندازی — تقویم شمسی */}
+        <div><label className="lbl">تاریخ راه‌اندازی (شمسی)</label>
+          <JalaliDatePicker value={f.commissionDate} onChange={(v) => set("commissionDate", v || "—")} /></div>
         <div className="sm:col-span-2"><label className="lbl">توضیحات</label><textarea className="inp" value={f.description} onChange={(e) => set("description", e.target.value)} /></div>
       </div>
       {err && <p className="text-[12px] font-bold mt-2.5" style={{ color: "var(--nok)" }}>{err}</p>}

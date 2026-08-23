@@ -45,15 +45,19 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--side)" }}>
-      {/* ---------- پنل صنعتی (تصویر کارخانه + اطلاعات زنده) ---------- */}
+      {/* ---------- پنل صنعتی — پس‌زمینه از تنظیمات برندینگ انتخاب می‌شود ---------- */}
       <div className="hidden lg:flex flex-col justify-between w-[52%] relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "linear-gradient(140deg,#101823,#0b1119 60%,#0d1520)" }} />
-        {imgOk && (
+        {db.settings.loginBg === "image" && imgOk && (
           <img src={LOGIN_BG} alt="" onError={() => setImgOk(false)}
             className="absolute inset-0 w-full h-full object-cover opacity-55"
             style={{ maskImage: "linear-gradient(105deg, black 55%, transparent 95%)" }} />
         )}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(11,17,25,0.25), rgba(11,17,25,0.9))" }} />
+        {/* الگوی فنی — گرید مهندسی */}
+        {db.settings.loginBg === "pattern" && (
+          <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)", backgroundSize: "44px 44px" }} />
+        )}
+        <div className="absolute inset-0" style={{ background: db.settings.loginBg === "image" ? "linear-gradient(90deg, rgba(11,17,25,0.25), rgba(11,17,25,0.9))" : "radial-gradient(circle at 75% 15%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 42%)" }} />
         <div className="hazard absolute top-0 inset-x-0" />
 
         <div className="relative z-10 p-10">
@@ -64,7 +68,10 @@ export default function Login() {
           <p className="font-display text-[42px] leading-[1.25] fade-up">
             سامانه کنترل و بازدید<br />روزانه تجهیزات
           </p>
-          <p className="text-white/65 text-[14px] mt-3 leading-7 fade-up" style={{ animationDelay: "120ms" }}>
+          <p className="text-[13px] font-bold mt-3 fade-up" style={{ color: "var(--acc)", animationDelay: "80ms" }}>
+            {db.settings.brandNameFa} — {db.settings.tagline}
+          </p>
+          <p className="text-white/65 text-[13.5px] mt-2 leading-7 fade-up" style={{ animationDelay: "120ms" }}>
             از اسکن QR روی بدنه دستگاه تا ثبت نتیجه، ساعت کارکرد و Sync خودکار —
             همه در یک چرخه سریع و آفلاین‌اول برای تبلت‌های صنعتی.
           </p>
@@ -84,7 +91,7 @@ export default function Login() {
 
         <div className="relative z-10 px-10 pb-8 flex items-center justify-between text-white/45 text-[11.5px] font-semibold">
           <span>{faDateLong(new Date())}</span>
-          <span className="ltr">NIPCO DECS v1.0.0</span>
+          <span dir="auto">{db.settings.brandNameEn} DECS v1.0.0</span>
         </div>
       </div>
 

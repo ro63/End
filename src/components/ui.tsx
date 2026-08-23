@@ -6,9 +6,10 @@
    SVG سبک (Bar/Line/Donut/Spark)، مودال، سوئیچ، Toast و...
    ============================================================ */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ReactNode, CSSProperties } from "react";
-import { cx } from "../lib/utils";
+import { cx, g2j, j2g, J_MONTHS, J_WEEKDAYS, jDaysInMonth, jStr, parseJ, faNum } from "../lib/utils";
 import { useStore } from "../lib/store";
 import type { ConnState } from "../lib/types";
 
@@ -334,4 +335,132 @@ export function CountUp({ value, frac = 0 }: { value: number; frac?: number }) {
     return () => cancelAnimationFrame(raf);
   }, [value]);
   return <>{v.toLocaleString("fa-IR", { maximumFractionDigits: frac })}</>;
+}
+
+/* ============================================================
+   انتخابگر تاریخ شمسی (Jalali Date Picker)
+   ------------------------------------------------------------
+   ورودی: value به‌صورت "1405/05/23" (یا خالی)
+   خروجی: onChange با همین فرمت — همه تقویم‌های سامانه شمسی‌اند.
+   تقویم Popover: پیمایش ماه/سال، انتخاب روز، «امروز» و «پاک‌کردن».
+   ============================================================ */
+export function JalaliDatePicker({ value, onChange, placeholder = "انتخاب تاریخ…", className }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number; width: number } | null>(null);
+  const today = g2j(new Date());
+  /* نمای اولیه از مقدار فعلی یا امروز */
+  const [view, setView] = useState(() => {
+    const p = parseJ(value);
+    return p ? { y: p.jy, m: p.jm } : { y: today.jy, m: today.jm };
+  });
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  /* بازکردن — محاسبه موقعیت ثابت (Fixed) تا داخل مودال/اسکرول بریده نشود */
+  const doOpen = () => {
+    const r = wrapRef.current?.getBoundingClientRect();
+    const p = parseJ(value);
+    if (p) setView({ y: p.jy, m: p.jm });
+    if (r) {
+      const H = 392;
+      const below = r.bottom + H < window.innerHeight - 8;
+      setPos({ top: below ? r.bottom + 6 : Math.max(8, r.top - H - 6), right: Math.max(8, window.innerWidth - r.right), width: Math.max(r.width, 292) });
+    }
+    setOpen((o) => !o);
+  };
+
+  /* بستن Popover با کلیک بیرون (هم دکمه و هم تقویم مستثنا هستند) */
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
+  const sel = parseJ(value);
+  const days = jDaysInMonth(view.y, view.m);
+  /* روز اول ماه شمسی چه روزی از هفته میلادی است — هفته از شنبه شروع می‌شود */
+  const firstWeekday = j2g(view.y, view.m, 1).getDay(); // 0=یکشنبه
+  const offset = (firstWeekday + 1) % 7; // شنبه=0 … جمعه=6
+  const cells = useMemo(() => {
+    const arr: (number | null)[] = Array.from({ length: offset }, () => null);
+    for (let d = 1; d <= days; d++) arr.push(d);
+    return arr;
+  }, [offset, days]);
+
+  const nav = (delta: number) => setView((v) => {
+    let m = v.m + delta, y = v.y;
+    if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+    return { y, m };
+  });
+
+  return (
+    <div ref={wrapRef} className={cx("relative", className)}>
+      <button type="button" className="inp !text-right flex items-center justify-between gap-2 cursor-pointer !py-2.5" onClick={doOpen}>
+        <span className={cx(!value && "opacity-45")}>{value || placeholder}</span>
+        <Icon name="calendar" size={16} className="opacity-55 flex-shrink-0" />
+      </button>
+
+      {open && pos && createPortal(
+        <div ref={popRef} className="fixed z-[95] rounded-xl border shadow-2xl pop-in no-print"
+          style={{ background: "var(--panel)", borderColor: "var(--line2)", top: pos.top, right: pos.right, width: pos.width, maxWidth: "calc(100vw - 16px)" }}>
+          {/* هدر تقویم — نام ماه و سال + پیمایش */}
+          <div className="flex items-center justify-between px-3 pt-3 pb-2">
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--panel2)]" onClick={() => nav(1)} title="ماه بعد">
+              <Icon name="chevs" size={15} className="rotate-180" />
+            </button>
+            <div className="text-center">
+              <p className="font-bold text-[13.5px]">{J_MONTHS[view.m - 1]} {faNum(view.y)}</p>
+              <select className="text-[10.5px] font-bold bg-transparent border-0 outline-none cursor-pointer mt-0.5" style={{ color: "var(--muted)" }}
+                value={view.y} onChange={(e) => setView((v) => ({ ...v, y: +e.target.value }))}>
+                {Array.from({ length: 15 }, (_, i) => today.jy - 10 + i).map((y) => <option key={y} value={y}>{faNum(y)}</option>)}
+              </select>
+            </div>
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--panel2)]" onClick={() => nav(-1)} title="ماه قبل">
+              <Icon name="chevs" size={15} />
+            </button>
+          </div>
+          {/* نام روزهای هفته — شنبه تا جمعه */}
+          <div className="grid grid-cols-7 px-2 pb-1">
+            {J_WEEKDAYS.map((w, i) => (
+              <span key={w} className="text-center text-[10px] font-bold py-1" style={{ color: i === 6 ? "var(--nok)" : "var(--muted)" }}>{w}</span>
+            ))}
+          </div>
+          {/* شبکه روزها */}
+          <div className="grid grid-cols-7 px-2 pb-2 gap-y-0.5">
+            {cells.map((d, i) => {
+              if (d === null) return <span key={"b" + i} />;
+              const isSel = sel && sel.jy === view.y && sel.jm === view.m && sel.jd === d;
+              const isToday = today.jy === view.y && today.jm === view.m && today.jd === d;
+              const friday = (offset + d - 1) % 7 === 6;
+              return (
+                <button key={d} type="button" onClick={() => { onChange(jStr(view.y, view.m, d)); setOpen(false); }}
+                  className={cx("h-9 rounded-lg text-[12.5px] font-bold transition-all hover:bg-[var(--acc-soft)]", isSel && "!text-white")}
+                  style={isSel ? { background: "var(--acc)" } : isToday ? { boxShadow: "inset 0 0 0 1.5px var(--acc)", color: "var(--acc)" } : friday ? { color: "var(--nok)" } : {}}>
+                  {faNum(d)}
+                </button>
+              );
+            })}
+          </div>
+          {/* فوتر — امروز / پاک‌کردن */}
+          <div className="flex items-center justify-between px-3 py-2 border-t" style={{ borderColor: "var(--line)" }}>
+            <button type="button" className="text-[11.5px] font-bold flex items-center gap-1 hover:text-[var(--acc)]" style={{ color: "var(--muted)" }}
+              onClick={() => { onChange(jStr(today.jy, today.jm, today.jd)); setOpen(false); }}>
+              <Icon name="clock" size={12} />امروز
+            </button>
+            <button type="button" className="text-[11.5px] font-bold flex items-center gap-1 hover:text-[var(--nok)]" style={{ color: "var(--muted)" }}
+              onClick={() => { onChange(""); setOpen(false); }}>
+              <Icon name="x" size={12} />پاک‌کردن
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 }

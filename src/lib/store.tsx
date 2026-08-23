@@ -59,7 +59,8 @@ function loadDB(): DB {
     const raw = localStorage.getItem(DB_KEY);
     if (raw) {
       const d = JSON.parse(raw) as DB;
-      if (d.v === 3) return d;
+      /* Migration: ادغام کلیدهای جدید Settings با نسخه‌های ذخیره‌شده قدیمی */
+      if (d.v === 3) return { ...d, settings: { ...makeSeed().settings, ...d.settings } };
     }
   } catch { /* داده خراب → Seed مجدد */ }
   return makeSeed();

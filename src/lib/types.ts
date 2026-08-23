@@ -201,6 +201,13 @@ export interface Settings {
   autoBackup: "off" | "daily" | "weekly" | "monthly";
   logoDataUrl: string | null;       // لوگوی آپلودی — Hard-Code نیست
   loginLogoDataUrl: string | null;
+  reportLogoDataUrl: string | null; // لوگوی مخصوص گزارشات/PDF/چاپ
+  brandNameFa: string;              // نام شرکت (فارسی) — در ورود، سربرگ و چاپ
+  brandNameEn: string;              // نام شرکت (انگلیسی)
+  tagline: string;                  // شعار زیر لوگو در صفحه ورود
+  loginBg: "image" | "solid" | "pattern"; // پس‌زمینه صفحه ورود
+  cardRadius: number;               // شعاع گوشه کارت‌ها (شخصی‌سازی UI)
+  density: "comfortable" | "compact";     // تراکم رابط کاربری
   operationalYear: number;          // مثال: 1405
   notifRules: { nokEmail: boolean; nokSms: boolean; overdueEmail: boolean; failureSms: boolean };
   dashLayout: Record<string, boolean>;
